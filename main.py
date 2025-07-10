@@ -41,34 +41,52 @@ def get_ticker_from_llm(company_name: str) -> dict:
     return {"ticker": ticker}
 
 def get_stock_data(ticker: str) -> dict:
-    ticker_obj = yf.Ticker(ticker)
-    ticker_info = ticker_obj.info
+    try:
+        ticker_obj = yf.Ticker(ticker)
+        ticker_info = ticker_obj.info
 
-    current_price = ticker_info.get("currentPrice")
-    target_price = ticker_info.get("targetMeanPrice")
+        current_price = ticker_info.get("currentPrice")
+        target_price = ticker_info.get("targetMeanPrice")
 
-    # Fallback: try to get last close price if current price missing
-    if current_price is None:
-        hist = ticker_obj.history(period="1d")
-        if not hist.empty:
-            current_price = hist["Close"].iloc[-1]
-        else:
-            current_price = None
+        # Fallback: try to get last close price if current price missing
+        if current_price is None:
+            hist = ticker_obj.history(period="1d")
+            if not hist.empty:
+                current_price = hist["Close"].iloc[-1]
+            else:
+                current_price = None
 
-    if current_price is None or target_price is None:
+        if current_price is None or target_price is None:
+            return {
+                "ticker": ticker,
+                "current_price": current_price,
+                "target_price": target_price,
+                "error": "Price data unavailable or ticker not supported."
+            }
+
         return {
             "ticker": ticker,
             "current_price": current_price,
             "target_price": target_price,
-            "error": "Price data unavailable or ticker not supported."
+            "error": None
         }
-
-    return {
-        "ticker": ticker,
-        "current_price": current_price,
-        "target_price": target_price,
-        "error": None
-    }
+    
+    except Exception as e:
+        # Handle rate limiting and other errors
+        error_msg = str(e)
+        if "Rate limited" in error_msg or "Too Many Requests" in error_msg:
+            error_msg = "Yahoo Finance rate limit exceeded. Please try again in a few minutes."
+        elif "Invalid ticker" in error_msg:
+            error_msg = f"Invalid ticker symbol: {ticker}"
+        else:
+            error_msg = f"Error fetching data for {ticker}: {str(e)}"
+        
+        return {
+            "ticker": ticker,
+            "current_price": None,
+            "target_price": None,
+            "error": error_msg
+        }
 
 def get_recommendation(ticker: str, current_price: float, target_price: float) -> dict:
     messages = [

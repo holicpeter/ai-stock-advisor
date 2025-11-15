@@ -27,10 +27,24 @@ load_dotenv()
 # Initialize Anthropic client
 @st.cache_resource
 def get_ai_client():
-    # Try Streamlit secrets first (for cloud), then env variable (for local)
-    api_key = st.secrets.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_API_KEY")
+    # Try multiple sources: Replit secrets, Streamlit secrets, env variable
+    api_key = None
+    
+    # Replit secrets
+    try:
+        api_key = os.environ.get("ANTHROPIC_API_KEY")
+    except:
+        pass
+    
+    # Streamlit secrets (for Streamlit Cloud)
     if not api_key:
-        st.error("⚠️ ANTHROPIC_API_KEY nie je nastavený! Skontrolujte Streamlit Cloud secrets.")
+        try:
+            api_key = st.secrets.get("ANTHROPIC_API_KEY")
+        except:
+            pass
+    
+    if not api_key:
+        st.error("⚠️ ANTHROPIC_API_KEY nie je nastavený! Skontrolujte Replit Secrets alebo .env súbor.")
         st.stop()
     
     if ANTHROPIC_SDK:

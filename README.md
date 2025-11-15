@@ -1,22 +1,43 @@
-# 📈 AI Stock Advisor Agent
+# 📈 AI Stock Advisor - Trader 2.0 Club
 
 ![Python](https://img.shields.io/badge/Python-3.12+-blue.svg)
-![OpenAI](https://img.shields.io/badge/OpenAI-GPT--4-green.svg)
+![Claude AI](https://img.shields.io/badge/Claude-3.5%20Haiku-green.svg)
+![Streamlit](https://img.shields.io/badge/Streamlit-Web%20UI-red.svg)
 ![Yahoo Finance](https://img.shields.io/badge/Yahoo-Finance-purple.svg)
-![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 
 ## 🚀 Overview
 
-An intelligent Python-based stock advisor agent that combines the power of OpenAI's GPT models with real-time Yahoo Finance data to provide automated stock recommendations. The agent can process both company names and stock ticker symbols, fetch current market data, and generate AI-driven BUY/HOLD/SELL recommendations.
+Professional AI-powered stock advisor with beautiful web interface designed for **Trader 2.0 Club** members. Combines Claude AI with real-time Yahoo Finance data to provide instant BUY/HOLD/SELL recommendations.
 
 ## ✨ Features
 
-- **🔍 Smart Ticker Recognition:** Automatically identifies stock ticker symbols from company names using OpenAI GPT-4
-- **📊 Real-Time Market Data:** Fetches current and analyst target prices using Yahoo Finance API
-- **🤖 AI-Powered Recommendations:** Generates BUY/HOLD/SELL recommendations based on price analysis
-- **📋 Token Usage Tracking:** Monitors and logs OpenAI API token consumption
-- **⚡ Fast Processing:** Optimized for quick response times
-- **🛡️ Error Handling:** Robust error handling for invalid tickers and API failures
+- 🌐 **Beautiful Web UI** - Professional dark theme optimized for traders
+- 🤖 **Claude AI Analysis** - Powered by Claude 3.5 Haiku
+- 📊 **Real-Time Data** - Live market prices from Yahoo Finance
+- 📈 **Visual Charts** - Interactive price comparisons
+- ⚡ **Instant Results** - Analysis in under 5 seconds
+- 📱 **Mobile Friendly** - Works on any device
+
+## 🎯 For Clients (Non-Technical Users)
+
+### 🌐 Web Version (Recommended)
+
+**Live Demo:** [Coming Soon - Streamlit Cloud]
+
+Simply open the link in your browser:
+1. Enter a stock ticker (NVDA) or company name (Microsoft)
+2. Click "Analyze"
+3. Get instant AI recommendation with charts
+
+**No installation needed!** Works on phone, tablet, or computer.
+
+### � For Trader 2.0 Club
+
+This is a premium service for club members featuring:
+- Professional trading interface
+- Real-time market analysis
+- AI-powered insights
+- Beautiful visualizations
 
 ## 🛠️ Installation
 

@@ -5,6 +5,7 @@ from anthropic import Anthropic
 from dotenv import load_dotenv
 from datetime import datetime
 import plotly.graph_objects as go
+from pdf_generator import create_pdf_report
 
 # Load environment variables (for local dev)
 load_dotenv()
@@ -330,6 +331,38 @@ if analyze_button and user_input:
                     st.markdown("- Trhové podmienky sa menia")
                 
                 st.info(f"⚡ Claude AI - Token usage: {response.usage.input_tokens} vstup / {response.usage.output_tokens} výstup")
+                
+                # PDF Download Button
+                st.markdown("---")
+                st.markdown("### 📄 Stiahnuť kompletný report")
+                
+                try:
+                    pdf_data = create_pdf_report(
+                        ticker=ticker,
+                        company_name=company_name,
+                        sector=sector,
+                        industry=industry,
+                        current_price=current_price,
+                        target_price=target_price,
+                        recommendation=rec_type,
+                        recommendation_text=recommendation_text,
+                        ticker_info=ticker_info,
+                        price_diff_pct=price_diff_pct
+                    )
+                    
+                    st.download_button(
+                        label="📥 Download Full Report (PDF)",
+                        data=pdf_data,
+                        file_name=f"{ticker}_AI_Stock_Analysis_{datetime.now().strftime('%Y%m%d')}.pdf",
+                        mime="application/pdf",
+                        use_container_width=True,
+                        type="primary"
+                    )
+                    
+                    st.success("✅ PDF report je pripravený na stiahnutie!")
+                    
+                except Exception as pdf_error:
+                    st.warning(f"⚠️ PDF report momentálne nie je dostupný: {str(pdf_error)}")
                 
             except Exception as e:
                 st.error(f"❌ Chyba pri AI analýze: {str(e)}")

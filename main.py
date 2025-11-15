@@ -1,15 +1,15 @@
 import os
 import json
 import yfinance as yf
-from openai import OpenAI
+from anthropic import Anthropic
 from dotenv import load_dotenv
 from datetime import datetime
 
 # Load environment variables
 load_dotenv()
 
-# Initialize OpenAI client
-client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+# Initialize Anthropic client
+client = Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
 
 # --- Utility function to get timestamp ---
 def timestamp():
@@ -22,21 +22,21 @@ def get_user_input(prompt: str) -> dict:
     return {"user_input": user_response}
 
 def get_ticker_from_llm(company_name: str) -> dict:
-    messages = [
-        {
-            "role": "system",
-            "content": "You are a financial assistant. Given a company name, return ONLY its exact stock ticker symbol. Return only the ticker text (e.g., 'NVDA'). No extra explanation."
-        },
-        {
-            "role": "user",
-            "content": f"What is the stock ticker symbol for {company_name}?"
-        }
-    ]
-    response = client.chat.completions.create(model="gpt-4o", messages=messages)
-    ticker = response.choices[0].message.content.strip().upper()
+    response = client.messages.create(
+        model="claude-3-5-haiku-20241022",
+        max_tokens=100,
+        system="You are a financial assistant. Given a company name, return ONLY its exact stock ticker symbol. Return only the ticker text (e.g., 'NVDA'). No extra explanation.",
+        messages=[
+            {
+                "role": "user",
+                "content": f"What is the stock ticker symbol for {company_name}?"
+            }
+        ]
+    )
+    ticker = response.content[0].text.strip().upper()
 
     # Print token usage
-    print(f"{timestamp()} 🔢 Token usage [get_ticker_from_llm]: {response.usage}")
+    print(f"{timestamp()} 🔢 Token usage [get_ticker_from_llm]: input={response.usage.input_tokens}, output={response.usage.output_tokens}")
 
     return {"ticker": ticker}
 
@@ -89,21 +89,21 @@ def get_stock_data(ticker: str) -> dict:
         }
 
 def get_recommendation(ticker: str, current_price: float, target_price: float) -> dict:
-    messages = [
-        {
-            "role": "system",
-            "content": "You are a financial assistant. Make a BUY/HOLD/SELL recommendation: BUY if current price much lower than target price, HOLD if close, SELL if higher."
-        },
-        {
-            "role": "user",
-            "content": f"Ticker: {ticker}, Current price: {current_price}, Target price: {target_price}."
-        }
-    ]
-    response = client.chat.completions.create(model="gpt-4o", messages=messages)
-    recommendation_body = response.choices[0].message.content.strip()
+    response = client.messages.create(
+        model="claude-3-5-haiku-20241022",
+        max_tokens=500,
+        system="You are a financial assistant. Make a BUY/HOLD/SELL recommendation: BUY if current price much lower than target price, HOLD if close, SELL if higher.",
+        messages=[
+            {
+                "role": "user",
+                "content": f"Ticker: {ticker}, Current price: {current_price}, Target price: {target_price}."
+            }
+        ]
+    )
+    recommendation_body = response.content[0].text.strip()
 
     # Print token usage
-    print(f"{timestamp()} 🔢 Token usage [get_recommendation]: {response.usage}")
+    print(f"{timestamp()} 🔢 Token usage [get_recommendation]: input={response.usage.input_tokens}, output={response.usage.output_tokens}")
 
     ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     full_recommendation = f"[{ts}] Recommendation: {recommendation_body}\n\n⚠️ Disclaimer: This recommendation is for informational purposes only and does not constitute financial advice. Please consult a qualified financial advisor before making investment decisions."

@@ -185,18 +185,39 @@ if analyze_button and user_input:
                 st.error(f"❌ Chyba pri identifikácii tickeru: {str(e)}")
                 st.stop()
         
-        # Get stock data
+        # Get stock data with caching
+        @st.cache_data(ttl=300)  # Cache for 5 minutes
+        def get_stock_info(ticker_symbol):
+            ticker_obj = yf.Ticker(ticker_symbol)
+            return ticker_obj.info, ticker_obj.history(period="1d")
+        
         st.info(f"📊 Získavam real-time dáta pre **{ticker}**...")
+        
+        # Retry logic for rate limits
+        max_retries = 3
+        retry_delay = 2
+        
+        for attempt in range(max_retries):
+            try:
+                ticker_info, hist = get_stock_info(ticker)
+                break  # Success, exit retry loop
+            except Exception as retry_error:
+                if "Too Many Requests" in str(retry_error) and attempt < max_retries - 1:
+                    st.warning(f"⏳ Rate limit hit, čakám {retry_delay} sekúnd... (pokus {attempt + 1}/{max_retries})")
+                    import time
+                    time.sleep(retry_delay)
+                    retry_delay *= 2  # Exponential backoff
+                    continue
+                else:
+                    raise  # Re-raise if not rate limit or last attempt
+        
         try:
-            ticker_obj = yf.Ticker(ticker)
-            ticker_info = ticker_obj.info
             
             current_price = ticker_info.get("currentPrice")
             target_price = ticker_info.get("targetMeanPrice")
             
             # Fallback
             if current_price is None:
-                hist = ticker_obj.history(period="1d")
                 if not hist.empty:
                     current_price = hist["Close"].iloc[-1]
             

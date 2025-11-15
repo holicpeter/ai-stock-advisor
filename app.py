@@ -17,8 +17,9 @@ except ImportError:
 try:
     from pdf_generator import create_pdf_report
     PDF_AVAILABLE = True
-except ImportError:
+except Exception as e:
     PDF_AVAILABLE = False
+    # Silently disable PDF if reportlab not available
 
 # Load environment variables (for local dev)
 load_dotenv()

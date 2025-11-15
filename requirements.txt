@@ -1,12 +1,7 @@
 streamlit
 python-dotenv
 yfinance
-plotly
 pandas
 numpy
 requests
 httpx
-reportlab
-Pillow
-packaging
-tenacity

@@ -9,8 +9,16 @@ except ImportError:
     ANTHROPIC_SDK = False
 from dotenv import load_dotenv
 from datetime import datetime
-import plotly.graph_objects as go
-from pdf_generator import create_pdf_report
+try:
+    import plotly.graph_objects as go
+    PLOTLY_AVAILABLE = True
+except ImportError:
+    PLOTLY_AVAILABLE = False
+try:
+    from pdf_generator import create_pdf_report
+    PDF_AVAILABLE = True
+except ImportError:
+    PDF_AVAILABLE = False
 
 # Load environment variables (for local dev)
 load_dotenv()
@@ -238,26 +246,35 @@ if analyze_button and user_input:
         
         # Create price chart
         st.markdown("### 📊 Porovnanie cien")
-        fig = go.Figure()
         
-        fig.add_trace(go.Bar(
-            x=['Aktuálna cena', 'Cieľová cena'],
-            y=[current_price, target_price],
-            marker_color=['#4a90e2', '#50c878'],
-            text=[f'${current_price:.2f}', f'${target_price:.2f}'],
-            textposition='auto',
-        ))
-        
-        fig.update_layout(
-            plot_bgcolor='rgba(0,0,0,0)',
-            paper_bgcolor='rgba(0,0,0,0)',
-            font_color='white',
-            height=300,
-            showlegend=False,
-            yaxis_title="Cena (USD)"
-        )
-        
-        st.plotly_chart(fig, use_container_width=True)
+        if PLOTLY_AVAILABLE:
+            fig = go.Figure()
+            
+            fig.add_trace(go.Bar(
+                x=['Aktuálna cena', 'Cieľová cena'],
+                y=[current_price, target_price],
+                marker_color=['#4a90e2', '#50c878'],
+                text=[f'${current_price:.2f}', f'${target_price:.2f}'],
+                textposition='auto',
+            ))
+            
+            fig.update_layout(
+                plot_bgcolor='rgba(0,0,0,0)',
+                paper_bgcolor='rgba(0,0,0,0)',
+                font_color='white',
+                height=300,
+                showlegend=False,
+                yaxis_title="Cena (USD)"
+            )
+            
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            # Fallback: Simple bar chart using Streamlit
+            import pandas as pd
+            chart_data = pd.DataFrame({
+                'Cena': [current_price, target_price],
+            }, index=['Aktuálna cena', 'Cieľová cena'])
+            st.bar_chart(chart_data)
         
         # Get AI recommendation
         st.markdown("### 🤖 AI Analýza")
@@ -361,36 +378,37 @@ if analyze_button and user_input:
                 st.info(f"⚡ Claude AI - Token usage: {response.usage.input_tokens} vstup / {response.usage.output_tokens} výstup")
                 
                 # PDF Download Button
-                st.markdown("---")
-                st.markdown("### 📄 Stiahnuť kompletný report")
-                
-                try:
-                    pdf_data = create_pdf_report(
-                        ticker=ticker,
-                        company_name=company_name,
-                        sector=sector,
-                        industry=industry,
-                        current_price=current_price,
-                        target_price=target_price,
-                        recommendation=rec_type,
-                        recommendation_text=recommendation_text,
-                        ticker_info=ticker_info,
-                        price_diff_pct=price_diff_pct
-                    )
+                if PDF_AVAILABLE:
+                    st.markdown("---")
+                    st.markdown("### 📄 Stiahnuť kompletný report")
                     
-                    st.download_button(
-                        label="📥 Download Full Report (PDF)",
-                        data=pdf_data,
-                        file_name=f"{ticker}_AI_Stock_Analysis_{datetime.now().strftime('%Y%m%d')}.pdf",
-                        mime="application/pdf",
-                        use_container_width=True,
-                        type="primary"
-                    )
-                    
-                    st.success("✅ PDF report je pripravený na stiahnutie!")
-                    
-                except Exception as pdf_error:
-                    st.warning(f"⚠️ PDF report momentálne nie je dostupný: {str(pdf_error)}")
+                    try:
+                        pdf_data = create_pdf_report(
+                            ticker=ticker,
+                            company_name=company_name,
+                            sector=sector,
+                            industry=industry,
+                            current_price=current_price,
+                            target_price=target_price,
+                            recommendation=rec_type,
+                            recommendation_text=recommendation_text,
+                            ticker_info=ticker_info,
+                            price_diff_pct=price_diff_pct
+                        )
+                        
+                        st.download_button(
+                            label="📥 Download Full Report (PDF)",
+                            data=pdf_data,
+                            file_name=f"{ticker}_AI_Stock_Analysis_{datetime.now().strftime('%Y%m%d')}.pdf",
+                            mime="application/pdf",
+                            use_container_width=True,
+                            type="primary"
+                        )
+                        
+                        st.success("✅ PDF report je pripravený na stiahnutie!")
+                        
+                    except Exception as pdf_error:
+                        st.warning(f"⚠️ PDF report momentálne nie je dostupný: {str(pdf_error)}")
                 
             except Exception as e:
                 st.error(f"❌ Chyba pri AI analýze: {str(e)}")

@@ -1,7 +1,12 @@
 import os
 import streamlit as st
 import yfinance as yf
-from anthropic import Anthropic
+try:
+    from anthropic import Anthropic
+    ANTHROPIC_SDK = True
+except ImportError:
+    from anthropic_simple import AnthropicClient
+    ANTHROPIC_SDK = False
 from dotenv import load_dotenv
 from datetime import datetime
 import plotly.graph_objects as go
@@ -18,7 +23,11 @@ def get_ai_client():
     if not api_key:
         st.error("⚠️ ANTHROPIC_API_KEY nie je nastavený! Skontrolujte Streamlit Cloud secrets.")
         st.stop()
-    return Anthropic(api_key=api_key)
+    
+    if ANTHROPIC_SDK:
+        return Anthropic(api_key=api_key)
+    else:
+        return AnthropicClient(api_key=api_key)
 
 client = get_ai_client()
 
@@ -148,12 +157,20 @@ if analyze_button and user_input:
             # Use AI to get ticker
             st.info(f"🤖 Zisťujem ticker pre: **{user_input}**...")
             try:
-                response = client.messages.create(
-                    model="claude-3-5-haiku-20241022",
-                    max_tokens=100,
-                    system="You are a financial assistant. Given a company name, return ONLY its exact stock ticker symbol. Return only the ticker text (e.g., 'NVDA'). No extra explanation.",
-                    messages=[{"role": "user", "content": f"What is the stock ticker symbol for {user_input}?"}]
-                )
+                if ANTHROPIC_SDK:
+                    response = client.messages.create(
+                        model="claude-3-5-haiku-20241022",
+                        max_tokens=100,
+                        system="You are a financial assistant. Given a company name, return ONLY its exact stock ticker symbol. Return only the ticker text (e.g., 'NVDA'). No extra explanation.",
+                        messages=[{"role": "user", "content": f"What is the stock ticker symbol for {user_input}?"}]
+                    )
+                else:
+                    response = client.create_message(
+                        model="claude-3-5-haiku-20241022",
+                        max_tokens=100,
+                        system="You are a financial assistant. Given a company name, return ONLY its exact stock ticker symbol. Return only the ticker text (e.g., 'NVDA'). No extra explanation.",
+                        messages=[{"role": "user", "content": f"What is the stock ticker symbol for {user_input}?"}]
+                    )
                 ticker = response.content[0].text.strip().upper()
                 st.success(f"✅ Ticker identifikovaný: **{ticker}**")
             except Exception as e:
@@ -246,15 +263,26 @@ if analyze_button and user_input:
         st.markdown("### 🤖 AI Analýza")
         with st.spinner("⚡ Claude AI analyzuje..."):
             try:
-                response = client.messages.create(
-                    model="claude-3-5-haiku-20241022",
-                    max_tokens=500,
-                    system="You are a financial assistant. Make a BUY/HOLD/SELL recommendation: BUY if current price much lower than target price, HOLD if close, SELL if higher.",
-                    messages=[{
-                        "role": "user",
-                        "content": f"Ticker: {ticker}, Current price: {current_price}, Target price: {target_price}."
-                    }]
-                )
+                if ANTHROPIC_SDK:
+                    response = client.messages.create(
+                        model="claude-3-5-haiku-20241022",
+                        max_tokens=500,
+                        system="You are a financial assistant. Make a BUY/HOLD/SELL recommendation: BUY if current price much lower than target price, HOLD if close, SELL if higher.",
+                        messages=[{
+                            "role": "user",
+                            "content": f"Ticker: {ticker}, Current price: {current_price}, Target price: {target_price}."
+                        }]
+                    )
+                else:
+                    response = client.create_message(
+                        model="claude-3-5-haiku-20241022",
+                        max_tokens=500,
+                        system="You are a financial assistant. Make a BUY/HOLD/SELL recommendation: BUY if current price much lower than target price, HOLD if close, SELL if higher.",
+                        messages=[{
+                            "role": "user",
+                            "content": f"Ticker: {ticker}, Current price: {current_price}, Target price: {target_price}."
+                        }]
+                    )
                 recommendation_text = response.content[0].text.strip()
                 
                 # Determine recommendation type

@@ -207,7 +207,18 @@ if analyze_button and user_input:
             st.success(f"✅ Dáta získané úspešne!")
             
         except Exception as e:
-            st.error(f"❌ Chyba pri získavaní dát: {str(e)}")
+            error_msg = str(e)
+            if "Too Many Requests" in error_msg or "Rate limit" in error_msg:
+                st.error("⏰ **Yahoo Finance Rate Limit**")
+                st.warning("""
+                Yahoo Finance API má limit na počet requestov. Skúste:
+                - Počkať 1-2 minúty a skúsiť znova
+                - Použiť iný ticker
+                - Aplikácia funguje správne, len Yahoo ma dočasné obmedzenie
+                """)
+                st.info("💡 Pre production verziu odporúčame premium API (Alpha Vantage, Polygon.io)")
+            else:
+                st.error(f"❌ Chyba pri získavaní dát: {error_msg}")
             st.stop()
         
         # Company Info Header

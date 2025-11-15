@@ -1,5 +1,4 @@
 streamlit
-anthropic
 python-dotenv
 yfinance
 plotly
@@ -7,10 +6,7 @@ pandas
 numpy
 requests
 httpx
-anyio
-distro
-pydantic
-sniffio
-typing-extensions
 reportlab
 Pillow
+packaging
+tenacity

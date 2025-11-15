@@ -1,7 +1,2 @@
-streamlit
-python-dotenv
 yfinance
-pandas
-numpy
-requests
 httpx

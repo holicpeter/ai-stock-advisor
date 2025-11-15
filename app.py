@@ -184,9 +184,23 @@ if analyze_button and user_input:
             st.error(f"❌ Chyba pri získavaní dát: {str(e)}")
             st.stop()
         
+        # Company Info Header
+        company_name = ticker_info.get("longName", ticker)
+        sector = ticker_info.get("sector", "N/A")
+        industry = ticker_info.get("industry", "N/A")
+        
+        st.markdown(f"## 🏢 {company_name} ({ticker})")
+        col_info1, col_info2 = st.columns(2)
+        with col_info1:
+            st.markdown(f"**📂 Sektor:** {sector}")
+        with col_info2:
+            st.markdown(f"**🏭 Odvetvie:** {industry}")
+        
+        st.markdown("---")
+        
         # Display price metrics
-        st.markdown("### 💰 Tržné dáta")
-        col1, col2, col3 = st.columns(3)
+        st.markdown("### 💰 Kľúčové cenové metriky")
+        col1, col2, col3, col4 = st.columns(4)
         
         price_diff = target_price - current_price
         price_diff_pct = (price_diff / current_price) * 100
@@ -194,10 +208,15 @@ if analyze_button and user_input:
         with col1:
             st.metric("💵 Aktuálna cena", f"${current_price:.2f}")
         with col2:
-            st.metric("🎯 Cieľová cena", f"${target_price:.2f}")
+            st.metric("🎯 Cieľová cena analytikov", f"${target_price:.2f}")
         with col3:
-            st.metric("📈 Potenciál", f"{price_diff_pct:+.2f}%", 
+            st.metric("📈 Potenciálny rast", f"{price_diff_pct:+.2f}%", 
                      delta=f"${price_diff:+.2f}")
+        with col4:
+            market_cap = ticker_info.get("marketCap")
+            if market_cap:
+                market_cap_b = market_cap / 1e9
+                st.metric("💼 Market Cap", f"${market_cap_b:.1f}B")
         
         # Create price chart
         st.markdown("### 📊 Porovnanie cien")
@@ -251,17 +270,66 @@ if analyze_button and user_input:
                     rec_emoji = "🟡"
                     rec_class = "recommendation-hold"
                 
-                # Display recommendation
+                # Display recommendation with detailed breakdown
                 st.markdown(f"""
                 <div class="{rec_class}">
-                    <h2 style="margin: 0;">{rec_emoji} ODPORÚČENIE: {rec_type}</h2>
+                    <h2 style="margin: 0;">{rec_emoji} ODPORÚČANIE: {rec_type}</h2>
                 </div>
                 """, unsafe_allow_html=True)
                 
-                st.markdown("#### 💡 Zdôvodnenie AI:")
+                st.markdown("---")
+                
+                # Summary box
+                col_sum1, col_sum2 = st.columns(2)
+                with col_sum1:
+                    st.markdown("#### 📊 Zhrnutie analýzy")
+                    st.markdown(f"""
+                    - **Ticker:** {ticker}
+                    - **Aktuálna cena:** ${current_price:.2f}
+                    - **Cieľová cena:** ${target_price:.2f}
+                    - **Cenový rozdiel:** ${price_diff:+.2f} ({price_diff_pct:+.1f}%)
+                    """)
+                
+                with col_sum2:
+                    st.markdown("#### 🎯 Investičný potenciál")
+                    if price_diff_pct > 20:
+                        st.success("🔥 Vysoký potenciál rastu (20%+)")
+                    elif price_diff_pct > 10:
+                        st.info("📈 Stredný potenciál rastu (10-20%)")
+                    elif price_diff_pct > 0:
+                        st.warning("⚖️ Nízky potenciál rastu (0-10%)")
+                    else:
+                        st.error("📉 Akcia nad cieľovou cenou")
+                
+                st.markdown("---")
+                
+                st.markdown("#### 💡 Detailné zdôvodnenie AI:")
                 st.markdown(recommendation_text)
                 
-                st.info(f"⚡ Token usage: {response.usage.input_tokens} in / {response.usage.output_tokens} out")
+                st.markdown("---")
+                
+                # Rationale breakdown
+                st.markdown("#### 🧠 Racionále:")
+                rationale_col1, rationale_col2 = st.columns(2)
+                
+                with rationale_col1:
+                    st.markdown("**✅ Pozitívne faktory:**")
+                    if price_diff_pct > 15:
+                        st.markdown("- Výrazne pod cieľovou cenou")
+                    if sector in ["Technology", "Healthcare", "Financial Services"]:
+                        st.markdown(f"- Silný sektor ({sector})")
+                    if market_cap and market_cap > 100e9:
+                        st.markdown("- Veľká kapitalizácia (stabilita)")
+                
+                with rationale_col2:
+                    st.markdown("**⚠️ Body na zváženie:**")
+                    if price_diff_pct < 5:
+                        st.markdown("- Malý priestor na rast")
+                    if price_diff_pct < 0:
+                        st.markdown("- Možné prekúpenie")
+                    st.markdown("- Trhové podmienky sa menia")
+                
+                st.info(f"⚡ Claude AI - Token usage: {response.usage.input_tokens} vstup / {response.usage.output_tokens} výstup")
                 
             except Exception as e:
                 st.error(f"❌ Chyba pri AI analýze: {str(e)}")
@@ -274,16 +342,51 @@ if analyze_button and user_input:
         pred investičnými rozhodnutiami.
         """)
         
-        # Additional info
-        with st.expander("ℹ️ Ďalšie informácie"):
-            st.json({
-                "Ticker": ticker,
-                "Company": ticker_info.get("longName", "N/A"),
-                "Sector": ticker_info.get("sector", "N/A"),
-                "Industry": ticker_info.get("industry", "N/A"),
-                "Market Cap": ticker_info.get("marketCap", "N/A"),
-                "Analýza": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            })
+        # Additional financial metrics
+        with st.expander("📈 Ďalšie finančné metriky"):
+            metric_col1, metric_col2, metric_col3 = st.columns(3)
+            
+            with metric_col1:
+                st.markdown("**📊 Valuácia**")
+                pe_ratio = ticker_info.get("trailingPE")
+                if pe_ratio:
+                    st.metric("P/E Ratio", f"{pe_ratio:.2f}")
+                pb_ratio = ticker_info.get("priceToBook")
+                if pb_ratio:
+                    st.metric("P/B Ratio", f"{pb_ratio:.2f}")
+            
+            with metric_col2:
+                st.markdown("**💰 Dividendy**")
+                div_yield = ticker_info.get("dividendYield")
+                if div_yield:
+                    st.metric("Dividend Yield", f"{div_yield*100:.2f}%")
+                else:
+                    st.metric("Dividend Yield", "N/A")
+            
+            with metric_col3:
+                st.markdown("**📉 Volatilita**")
+                beta = ticker_info.get("beta")
+                if beta:
+                    st.metric("Beta", f"{beta:.2f}")
+                volume = ticker_info.get("volume")
+                if volume:
+                    st.metric("Objem", f"{volume:,.0f}")
+        
+        # Company details
+        with st.expander("🏢 Detaily o spoločnosti"):
+            st.markdown(f"**Názov:** {ticker_info.get('longName', 'N/A')}")
+            st.markdown(f"**Ticker:** {ticker}")
+            st.markdown(f"**Sektor:** {ticker_info.get('sector', 'N/A')}")
+            st.markdown(f"**Odvetvie:** {ticker_info.get('industry', 'N/A')}")
+            st.markdown(f"**Krajina:** {ticker_info.get('country', 'N/A')}")
+            st.markdown(f"**Website:** {ticker_info.get('website', 'N/A')}")
+            
+            business_summary = ticker_info.get('longBusinessSummary')
+            if business_summary:
+                st.markdown("**Popis podnikania:**")
+                st.markdown(business_summary[:500] + "..." if len(business_summary) > 500 else business_summary)
+            
+            st.markdown(f"**Čas analýzy:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
 else:
     # Landing state
